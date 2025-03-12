@@ -26,10 +26,13 @@ type SidebarContext = {
   open: boolean
   setOpen: (open: boolean) => void
   toggleSidebar: () => void
+  
   activeSubMenu: boolean
   setActiveSubMenu: (open: boolean) => void
   subMenuName: string | null
-  setSubMenuName: () => void
+  setSubMenuName: (name:string|null) => void
+  subMenuUrl: string | null
+  setSubMenuUrl: (name:string|null) => void
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
@@ -70,6 +73,7 @@ const SidebarProvider = React.forwardRef<
       // 사이드 바 옆의 새로운 div 생성
       const [activeSubMenu, setActiveSubMenu] = React.useState<boolean>(false)
       const [subMenuName, setSubMenuName] = React.useState<string | null>(null)
+      const [subMenuUrl, setSubMenuUrl] = React.useState<string | null>(null)
 
       const setOpen = React.useCallback(
         (value: boolean | ((value: boolean) => boolean)) => {
@@ -121,8 +125,10 @@ const SidebarProvider = React.forwardRef<
           setActiveSubMenu,
           subMenuName,
           setSubMenuName,
+          subMenuUrl,
+          setSubMenuUrl,
         }),
-        [state, open, setOpen, toggleSidebar, activeSubMenu, subMenuName]
+        [state, open, setOpen, toggleSidebar, activeSubMenu, subMenuName, setSubMenuName, subMenuUrl, setSubMenuUrl]
       )
 
       return (
@@ -601,6 +607,44 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
+const SidebarDataMenuButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button"> & {
+    title?: string
+    url?: string
+  } & VariantProps<typeof sidebarMenuButtonVariants>
+>(
+  (
+    {
+      variant = "default",
+      size = "default",
+      title = null,
+      url = null,
+      onClick,
+      className,
+      ...props
+    },
+    ref
+  ) => {
+  const {setSubMenuName, setSubMenuUrl} = useSidebar()
+
+  return (
+    <button
+        ref={ref}
+        data-sidebar="data-button"
+        data-size={size}
+        onClick={(event)=> {
+          onClick?.(event)
+          setSubMenuName(title)
+          setSubMenuUrl(url)
+        }}
+        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        {...props}
+      />
+  )
+})
+SidebarMenuSubButton.displayName = "SidebarDataMenuButton"
+
 const SidebarGroupContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
@@ -635,5 +679,6 @@ export {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarSubSideMenu,
+  SidebarDataMenuButton,
   useSidebar,
 }

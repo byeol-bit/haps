@@ -15,6 +15,7 @@ import {
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
+import { NavData } from "@/components/nav-data"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
 import {
@@ -122,25 +123,13 @@ const data = {
   navData: [
     {
       title: "HAPS 농도분석",
-      url: "#",
+      url: "/chart/density",
       icon: "/lnb_menu4.png",
-      items: [
-        {
-          title: "분석자료 조회",
-          url: "#",
-        },
-      ],
     },
     {
       title: "HAPS 위해도분석",
-      url: "#",
+      url: "/chart/risk-assessment",
       icon: "/lnb_menu5.png",
-      items: [
-        {
-          title: "분석자료 조회",
-          url: "#",
-        },
-      ],
     },
   ],
   navSecondary: [
@@ -180,7 +169,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton size="lg" asChild>
+            <SidebarMenuButton  size="lg" asChild>
               <a href="#">
                 <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
                   <Command className="size-4" />
@@ -197,7 +186,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent>
         <NavMain title={'공간분석'} items={data.navMain} />
-        <NavMain title={'자료분석'} items={data.navData} />
+        <NavData title={'자료분석'} items={data.navData} />
         {/*
         <NavProjects projects={data.projects} />
         */}

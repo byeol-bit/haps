@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import * as React from "react";
 import Map from "ol/Map";
 import View from "ol/View";
 import TileLayer from "ol/layer/Tile";
@@ -9,15 +9,38 @@ import { defaults as defaultControls } from 'ol/control';
 
 import { cn } from "@/lib/utils"
 
-const MapContext = createContext<Map | null>(null);
+type MapContext = {
+  map : Map | null
+  mapRef : React.MutableRefObject<HTMLDivElement | null>
+}
 
+const MapContext = React.createContext<MapContext | null>(null);
+
+// 해야할 일 : api키 자동연동 시키기
 let VWORLD_API_KEY = 'FB929D48-2E50-357C-97A0-28C63FD9B0BC';
 
-const MapProvider = ({children, className} : {children?: React.ReactNode, className?:string}) => {
-  const [map, setMap] = useState<Map | null>(null);
-  const mapRef = useRef<HTMLDivElement | null>(null);
+const useMap = () => {
+  const context = React.useContext(MapContext);
+  if (!context) throw new Error("useMap must be used within a MapProvider");
+  return context;
+};
 
-  useEffect(() => {
+const MapProvider = React.forwardRef<
+  HTMLDivElement,
+  React.ComponentProps<"div">
+>(
+  (
+    {
+      children, 
+      className, 
+      ...props
+    },
+    ref
+  ) => {
+  const [map, setMap] = React.useState<Map | null>(null);
+  const mapRef = React.useRef<HTMLDivElement | null>(null);
+
+  React.useEffect(() => {
     if (!mapRef.current) return;
 
     // Map 초기화
@@ -47,20 +70,51 @@ const MapProvider = ({children, className} : {children?: React.ReactNode, classN
     return () => mapInstance.setTarget(undefined);
   }, []);
 
+  const contextValue = React.useMemo<MapContext>(
+    () => ({
+      map,
+      mapRef
+    }),
+    [map, mapRef]
+  );
+
   return (
-    <MapContext.Provider value={map}>
+    <MapContext.Provider value={contextValue}>
+      <div 
+        ref={ref} 
+        className={cn("relative flex flex-1 flex-col gap-4 p-4 pt-0", className)}
+      >
+      {children}
+      </div>
+    </MapContext.Provider>
+  )
+})
+MapProvider.displayName = "MapProvider"
+
+const VworldMap = React.forwardRef<
+  HTMLDivElement, 
+  React.ComponentPropsWithoutRef<"div">
+>(
+  (
+    {
+      className,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    const {mapRef} = useMap()
+
+    return (
       <div 
         ref={mapRef} 
-        className={cn("h-full w-full overflow-hidden", className)}/>
+        className={cn("w-full h-full rounded-xl overflow-hidden", className)} {...props}
+        {...props}
+      >
       {children}
-    </MapContext.Provider>
-  );
-};
+      </div>
+    )
+  }
+)
 
-const useMap = () => {
-  const context = useContext(MapContext);
-  if (!context) throw new Error("useMap must be used within a MapProvider");
-  return context;
-};
-
-export {MapProvider, useMap}
+export {MapProvider, VworldMap, useMap}
