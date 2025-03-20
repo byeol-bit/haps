@@ -17,7 +17,6 @@ import {
 const SIDEBAR_COOKIE_NAME = "sidebar:state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
-const SIDEBAR_WIDTH_MOBILE = "18rem"
 const SIDEBAR_WIDTH_ICON = "3rem"
 const SIDEBAR_KEYBOARD_SHORTCUT = "b"
 
@@ -26,135 +25,145 @@ type SidebarContext = {
   open: boolean
   setOpen: (open: boolean) => void
   toggleSidebar: () => void
-  
-  activeSubMenu: boolean
-  setActiveSubMenu: (open: boolean) => void
-  subMenuName: string | null
-  setSubMenuName: (name:string|null) => void
-  subMenuUrl: string | null
-  setSubMenuUrl: (name:string|null) => void
+
+  stateSub: "expanded" | "collapsed"
+  openSub: boolean
+  setOpenSub: (open: boolean) => void
+  toggleSubSidebar: () => void
+
+  selectedMenu: string
+  setSelectedMenu: (title: string) => void
 }
 
 const SidebarContext = React.createContext<SidebarContext | null>(null)
 
 function useSidebar() {
   const context = React.useContext(SidebarContext)
-  if(!context) {
+  if (!context) {
     throw new Error("useSidebar must be used within a SidebarProvider")
   }
-  
+
   return context
-} 
+}
 
 const SidebarProvider = React.forwardRef<
-  HTMLDivElement, 
+  HTMLDivElement,
   React.ComponentProps<"div"> & {
     defaultOpen?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
   }
 >(
-    (
-      {
-        defaultOpen = true,
-        open: openProp,
-        onOpenChange: setOpenProp,
-        className,
-        style,
-        children,
-        ...props
-      },
-      ref
-    ) => {
-      // 사이드 바의 내부 상태 관리
-      // 컴포넌트 외부에서 내부 상태를 건들일 경우는 아래의 상태를 사용
-      const [_open, _setOpen] = React.useState(defaultOpen)
-      const open = openProp ?? _open
-      // 사이드 바 옆의 새로운 div 생성
-      const [activeSubMenu, setActiveSubMenu] = React.useState<boolean>(false)
-      const [subMenuName, setSubMenuName] = React.useState<string | null>(null)
-      const [subMenuUrl, setSubMenuUrl] = React.useState<string | null>(null)
+  (
+    {
+      defaultOpen = true,
+      open: openProp,
+      onOpenChange: setOpenProp,
+      className,
+      style,
+      children,
+      ...props
+    },
+    ref
+  ) => {
+    // 사이드 바의 내부 상태 관리
+    // 컴포넌트 외부에서 내부 상태를 건들일 경우는 아래의 상태를 사용
+    const [_open, _setOpen] = React.useState(defaultOpen)
+    const open = openProp ?? _open
+    // 사이드 바 옆의 새로운 div 생성
+    const [openSub, setOpenSub] = React.useState<boolean>(false)
+    const [selectedMenu, setSelectedMenu] = React.useState<string>('')
 
-      const setOpen = React.useCallback(
-        (value: boolean | ((value: boolean) => boolean)) => {
-          const openState = typeof value === "function" ? value(open) : value
-          if (setOpenProp) {
-            setOpenProp(openState)
-          } else {
-            _setOpen(openState)
-          }
-    
-          // 사이드바 상태를 쿠키에 저장해 화면이 새로고침 되어도 현재 상태를 유지하도록 설정.
-          document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-        },
-        [setOpenProp, open]
-      )
-
-      // 사이드바 토글기능
-      const toggleSidebar = React.useCallback(()=> {
-        return setOpen((open) => !open)
-      }, [setOpen])
-      
-      // 사이드바 단축키 추가
-      React.useEffect(() => {
-        const handleKeyDown = (event: KeyboardEvent) => {
-          if (
-            event.key ===  SIDEBAR_KEYBOARD_SHORTCUT && 
-            (event.metaKey || event.ctrlKey)
-          ) {
-            event.preventDefault()
-            toggleSidebar()
-          }
+    const setOpen = React.useCallback(
+      (value: boolean | ((value: boolean) => boolean)) => {
+        const openState = typeof value === "function" ? value(open) : value
+        if (setOpenProp) {
+          setOpenProp(openState)
+        } else {
+          _setOpen(openState)
         }
 
-        window.addEventListener("keydown", handleKeyDown)
-        return () => window.removeEventListener("keydown", handleKeyDown)
-      }, [toggleSidebar])
+        // 사이드바 상태를 쿠키에 저장해 화면이 새로고침 되어도 현재 상태를 유지하도록 설정.
+        document.cookie = `${SIDEBAR_COOKIE_NAME}=${openState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
+      },
+      [setOpenProp, open]
+    )
 
-      // data-state="expanded" or "collapsed"를 추가해 사이드바의 상태를 관리
-      // 이게 훨씬 tailwind로 동적 스타일 관리하기가 편하다.
-      const state = open ? "expanded" : "collapsed"
-
-      const contextValue = React.useMemo<SidebarContext>(
-        () => ({
-          state,
-          open,
-          setOpen,
-          toggleSidebar,
-          activeSubMenu,
-          setActiveSubMenu,
-          subMenuName,
-          setSubMenuName,
-          subMenuUrl,
-          setSubMenuUrl,
-        }),
-        [state, open, setOpen, toggleSidebar, activeSubMenu, subMenuName, setSubMenuName, subMenuUrl, setSubMenuUrl]
-      )
-
+    // 사이드바 토글기능
+    const toggleSidebar = React.useCallback(() => {
       return (
-        <SidebarContext.Provider value={contextValue}>
-          <TooltipProvider delayDuration={0}>
-            <div
-              style={
-                {
-                  "--sidebar-width": SIDEBAR_WIDTH,
-                  "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
-                  ...style,
-                } as React.CSSProperties
-              }
-              className={cn(
-                "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
-                className
-              )}
-              ref={ref}
-              {...props}
-            >
-              {children}
-            </div>
-          </TooltipProvider>
-        </SidebarContext.Provider>
+        setOpen((open) => !open)
       )
-    }
+    }, [setOpen])
+
+    // 서브 사이드바 토글기능
+    const toggleSubSidebar = React.useCallback(() => {
+      if (!open) return setOpenSub(false)
+      return setOpenSub((openSub) => !openSub)
+    }, [setOpenSub])
+
+    // 사이드바 단축키 추가
+    React.useEffect(() => {
+      const handleKeyDown = (event: KeyboardEvent) => {
+        if (
+          event.key === SIDEBAR_KEYBOARD_SHORTCUT &&
+          (event.metaKey || event.ctrlKey)
+        ) {
+          event.preventDefault()
+          setOpenSub(false)
+          toggleSidebar()
+        }
+      }
+
+      window.addEventListener("keydown", handleKeyDown)
+      return () => window.removeEventListener("keydown", handleKeyDown)
+    }, [toggleSidebar])
+
+    // data-state="expanded" or "collapsed"를 추가해 사이드바의 상태를 관리
+    // 이게 훨씬 tailwind로 동적 스타일 관리하기가 편하다.
+    const state = open ? "expanded" : "collapsed"
+    const stateSub = openSub ? "expanded" : "collapsed"
+
+    const contextValue = React.useMemo<SidebarContext>(
+      () => ({
+        state,
+        open,
+        setOpen,
+        toggleSidebar,
+        stateSub,
+        openSub,
+        setOpenSub,
+        toggleSubSidebar,
+        selectedMenu,
+        setSelectedMenu,
+      }),
+      [state, open, setOpen, toggleSidebar, stateSub, openSub, setOpenSub, toggleSubSidebar, selectedMenu, setSelectedMenu]
+    )
+
+    return (
+      <SidebarContext.Provider value={contextValue}>
+        <TooltipProvider delayDuration={0}>
+          <div
+            style={
+              {
+                "--sidebar-width": SIDEBAR_WIDTH,
+                "--sidebar-width-icon": SIDEBAR_WIDTH_ICON,
+                ...style,
+              } as React.CSSProperties
+            }
+            className={cn(
+              "group/sidebar-wrapper flex min-h-svh w-full has-[[data-variant=inset]]:bg-sidebar",
+              className
+            )}
+            ref={ref}
+            {...props}
+          >
+            {children}
+          </div>
+        </TooltipProvider>
+      </SidebarContext.Provider>
+    )
+  }
 )
 SidebarProvider.displayName = "SidebarProvider"
 
@@ -179,7 +188,7 @@ const Sidebar = React.forwardRef<
   ) => {
     const { state } = useSidebar()
 
-    if(collapsible === "none") {
+    if (collapsible === "none") {
       return (
         <div
           className={cn(
@@ -213,7 +222,7 @@ const Sidebar = React.forwardRef<
               ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
               : "group-data-[collapsible=icon]:w-[--sidebar-width-icon]"
           )}
-          />
+        />
         <div
           className={cn(
             "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
@@ -242,10 +251,10 @@ const Sidebar = React.forwardRef<
 Sidebar.displayName = "Sidebar"
 
 const SidebarTrigger = React.forwardRef<
-React.ElementRef<typeof Button>,
-React.ComponentProps<typeof Button>
->(({className, onClick, ...props}, ref) => {
-  const { toggleSidebar } = useSidebar()
+  React.ElementRef<typeof Button>,
+  React.ComponentProps<typeof Button>
+>(({ className, onClick, ...props }, ref) => {
+  const { toggleSidebar, setOpenSub } = useSidebar()
 
   return (
     <Button
@@ -254,62 +263,25 @@ React.ComponentProps<typeof Button>
       variant="ghost"
       size="icon"
       className={cn("h-7 w-7", className)}
-      onClick={(event)=> {
+      onClick={(event) => {
         onClick?.(event)
+        setOpenSub(false)
         toggleSidebar()
       }}
       {...props}
     >
-      <PanelLeft/>
+      <PanelLeft />
       <span className="sr-only">Toggle sidebar</span>
     </Button>
   )
 })
 SidebarTrigger.displayName = "SidebarTrigger"
 
-const SidebarSubSideMenu = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & {
-    side?: "left" | "right"
-    collapsible?: "offcanvas" | "icon" | "none"
-  }
->(
-  (
-    {
-      side = "left",
-      collapsible = "offcanvas",
-      className,
-      children,
-      ...props
-    }, ref
-  ) => {
-  const { activeSubMenu, subMenuName } = useSidebar();
-
-  return (
-    activeSubMenu && (
-      <div 
-        ref={ref}
-        data-collapsible={activeSubMenu ? "" : "collapsed"}
-        data-side={side}
-        className={cn(
-          "w-[300px] h-svh p-4 border-x bg-sidebar",
-          "transition-[width] duration-300 ease-linear",
-          activeSubMenu ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0", className)}
-        {...props}
-      >
-        <h2>{subMenuName} Details</h2>
-        <p>This is content for {activeSubMenu}.</p>
-      </div>
-    )
-  )
-})
-SidebarSubSideMenu.displayName = "SidebarSubSideMenu"
-
 const SidebarInset = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"main">
->(({className, ...props}, ref) => {
-  
+>(({ className, ...props }, ref) => {
+
 
   return (
     <main
@@ -329,7 +301,7 @@ SidebarInset.displayName = "SidebarInset"
 const SidebarHeader = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({className, ...props}, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -343,7 +315,7 @@ SidebarHeader.displayName = "SidebarHeader"
 const SidebarMenu = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<"ul">
->(({className, ...props}, ref)=> {
+>(({ className, ...props }, ref) => {
   return (
     <ul
       ref={ref}
@@ -452,7 +424,7 @@ SidebarMenuButton.displayName = "SidebarMenuButton"
 const SidebarContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({className, ...props}, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -467,9 +439,9 @@ SidebarContent.displayName = "SidebarContent"
 const SidebarFooter = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({className, ...props}, ref) => {
+>(({ className, ...props }, ref) => {
   return (
-    <div 
+    <div
       ref={ref}
       data-sidebar="footer"
       className={cn("flex flex-col gap-2 p-2", className)}
@@ -482,7 +454,7 @@ SidebarFooter.displayName = "SidebarFooter"
 const SidebarGroup = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({className, ...props}, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -490,14 +462,14 @@ const SidebarGroup = React.forwardRef<
       className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
       {...props}
     />
-  ) 
+  )
 })
 SidebarGroup.displayName = "SidebarGroup"
 
 const SidebarGroupLabel = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div"> & { asChild?: boolean }
->(({className, asChild=false, ...props}, ref) => {
+>(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "div"
   return (
     <Comp
@@ -519,8 +491,8 @@ const SidebarMenuAction = React.forwardRef<
   React.ComponentProps<"button"> & {
     asChild?: boolean
     showOnHover?: boolean
-}
->(({className, asChild=false, showOnHover = false, ...props}, ref) => {
+  }
+>(({ className, asChild = false, showOnHover = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button"
 
   return (
@@ -536,7 +508,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
       {...props}
@@ -548,7 +520,7 @@ SidebarMenuAction.displayName = "SidebarMenuAction"
 const SidebarMenuSub = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<"ul">
->(({className, ...props}, ref) => {
+>(({ className, ...props }, ref) => {
   return (
     <ul
       ref={ref}
@@ -567,7 +539,7 @@ SidebarMenuSub.displayName = "SidebarMenuSub"
 const SidebarMenuSubItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentProps<"li">
->(({...props}, ref) => {
+>(({ ...props }, ref) => {
   return (
     <li
       ref={ref}
@@ -577,15 +549,26 @@ const SidebarMenuSubItem = React.forwardRef<
 })
 SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
 
-const SidebarMenuSubButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<"a"> & {
+const SidebarMenuDashboardButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<"button"> & {
     asChild?: boolean
     size?: "sm" | "md"
     isActive?: boolean
+    title: string
   }
->(({asChild = false, size = "md", isActive, className, ...props}, ref) => {
-  const Comp = asChild ? Slot : "a"
+>((
+  {
+    asChild = false,
+    size = "md",
+    isActive,
+    title,
+    onClick,
+    className,
+    ...props
+  }, ref) => {
+  const Comp = asChild ? Slot : "button"
+  const { selectedMenu, setSelectedMenu, setOpenSub } = useSidebar()
 
   return (
     <Comp
@@ -593,62 +576,81 @@ const SidebarMenuSubButton = React.forwardRef<
       data-sidebar="menu-sub-button"
       data-size={size}
       data-active={isActive}
+      onClick={(e) => {
+        onClick?.(e)
+        console.log(title)
+        setOpenSub(true)
+        setSelectedMenu(title)
+
+        if (selectedMenu === title) {
+          setOpenSub(false)
+        }
+      }}
       className={cn(
         "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
         "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         size === "sm" && "text-xs",
         size === "md" && "text-sm",
         "group-data-[collapsible=icon]:hidden",
+        "cursor-pointer select-none",
         className
       )}
       {...props}
     />
   )
 })
-SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
+SidebarMenuDashboardButton.displayName = "SidebarMenuDashboardButton"
 
-const SidebarDataMenuButton = React.forwardRef<
+const SidebarMenuChartButton = React.forwardRef<
   HTMLButtonElement,
   React.ComponentProps<"button"> & {
-    title?: string
-    url?: string
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+    asChild?: boolean
+    size?: "sm" | "md"
+    isActive?: boolean
+    title: string
+  }
 >(
   (
     {
-      variant = "default",
-      size = "default",
-      title = null,
-      url = null,
+      asChild = false,
+      size = "md",
+      isActive,
+      title,
       onClick,
       className,
       ...props
     },
-    ref
-  ) => {
-  const {setSubMenuName, setSubMenuUrl} = useSidebar()
-
-  return (
-    <button
+    ref) => {
+    const Comp = asChild ? Slot : "button"
+    const { setSelectedMenu } = useSidebar()
+    return (
+      <Comp
         ref={ref}
-        data-sidebar="data-button"
         data-size={size}
-        onClick={(event)=> {
-          onClick?.(event)
-          setSubMenuName(title)
-          setSubMenuUrl(url)
+        data-active={isActive}
+        className={cn(
+          "flex h-8 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground",
+          "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+          size === "sm" && "text-xs",
+          size === "md" && "text-sm",
+          "group-data-[collapsible=icon]:hidden",
+          "cursor-pointer select-none",
+          className
+        )}
+        onClick={(e) => {
+          onClick?.(e)
+          setSelectedMenu(title)
         }}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
         {...props}
       />
-  )
-})
-SidebarMenuSubButton.displayName = "SidebarDataMenuButton"
+    )
+  })
+SidebarMenuChartButton.displayName = "SidebarMenuChartButton"
 
 const SidebarGroupContent = React.forwardRef<
   HTMLDivElement,
   React.ComponentProps<"div">
->(({className, ...props}, ref)=> {
+>(({ className, ...props }, ref) => {
   return (
     <div
       ref={ref}
@@ -672,13 +674,12 @@ export {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
+  SidebarMenuDashboardButton,
+  SidebarMenuChartButton,
   SidebarMenuSubItem,
   SidebarProvider,
   SidebarTrigger,
   SidebarGroup,
   SidebarGroupLabel,
-  SidebarSubSideMenu,
-  SidebarDataMenuButton,
   useSidebar,
 }

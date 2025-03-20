@@ -8,6 +8,7 @@ import XYZ from "ol/source/XYZ";
 import { defaults as defaultControls } from 'ol/control';
 
 import { cn } from "@/lib/utils"
+import useVworldApiKey from "@/hooks/useVworldApiKey";
 
 type MapContext = {
   map : Map | null
@@ -15,9 +16,6 @@ type MapContext = {
 }
 
 const MapContext = React.createContext<MapContext | null>(null);
-
-// 해야할 일 : api키 자동연동 시키기
-let VWORLD_API_KEY = 'FB929D48-2E50-357C-97A0-28C63FD9B0BC';
 
 const useMap = () => {
   const context = React.useContext(MapContext);
@@ -37,8 +35,9 @@ const MapProvider = React.forwardRef<
     },
     ref
   ) => {
-  const [map, setMap] = React.useState<Map | null>(null);
-  const mapRef = React.useRef<HTMLDivElement | null>(null);
+  const [map, setMap] = React.useState<Map | null>(null)
+  const mapRef = React.useRef<HTMLDivElement | null>(null)
+  const { apiKey } = useVworldApiKey()
 
   React.useEffect(() => {
     if (!mapRef.current) return;
@@ -49,7 +48,7 @@ const MapProvider = React.forwardRef<
       layers: [
         new TileLayer({
           source: new XYZ({
-            url: 'https://api.vworld.kr/req/wmts/1.0.0/' + VWORLD_API_KEY + '/Base/{z}/{y}/{x}.png',
+            url: 'https://api.vworld.kr/req/wmts/1.0.0/' + apiKey + '/Base/{z}/{y}/{x}.png',
             projection: "EPSG:3857",
           }),
         }),
@@ -68,7 +67,7 @@ const MapProvider = React.forwardRef<
 
     // 컴포넌트 언마운트 시 cleanup
     return () => mapInstance.setTarget(undefined);
-  }, []);
+  }, [apiKey]);
 
   const contextValue = React.useMemo<MapContext>(
     () => ({

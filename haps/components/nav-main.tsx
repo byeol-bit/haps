@@ -14,7 +14,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
+  SidebarMenuDashboardButton,
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -36,7 +36,6 @@ export function NavMain({
     }[]
   }[]
 }) {
-  const { activeSubMenu, setActiveSubMenu } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -63,11 +62,9 @@ export function NavMain({
                   <SidebarMenuSub>
                     {item.items?.map((subItem) => (
                       <SidebarMenuSubItem key={subItem.title}>
-                        <SidebarMenuSubButton asChild onClick={()=> setActiveSubMenu(!activeSubMenu)}>
-                          <a href={subItem.url}>
+                        <SidebarMenuDashboardButton asChild title={subItem.title}>
                             <span>{subItem.title}</span>    
-                          </a>
-                        </SidebarMenuSubButton>
+                        </SidebarMenuDashboardButton>
                       </SidebarMenuSubItem>
                     ))}
                   </SidebarMenuSub>

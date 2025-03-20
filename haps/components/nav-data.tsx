@@ -11,10 +11,9 @@ import {
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuAction,
-  SidebarDataMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
-  SidebarMenuSubButton,
+  SidebarMenuChartButton,
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar"
@@ -36,7 +35,6 @@ export function NavData({
     }[]
   }[]
 }) {
-  const { activeSubMenu, setActiveSubMenu } = useSidebar();
 
   return (
     <SidebarGroup>
@@ -44,10 +42,10 @@ export function NavData({
       <SidebarMenu>
         {items.map((item) => (
           <SidebarMenuItem key={item.title}>
-            <SidebarDataMenuButton title={item.title} url={item.url}>
-              <Image src={item.icon} alt={item.title} width={42} height={42}></Image>
-              <span>{item.title}</span>
-            </SidebarDataMenuButton>
+            <SidebarMenuChartButton title={item.title} className="w-full">
+                <Image src={item.icon} alt={item.title} width={42} height={42}></Image>
+                <span>{item.title}</span>
+            </SidebarMenuChartButton>
           </SidebarMenuItem>
         ))}
       </SidebarMenu>

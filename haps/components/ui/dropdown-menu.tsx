@@ -93,6 +93,32 @@ const DropdownMenuItem = React.forwardRef<
 ))
 DropdownMenuItem.displayName = DropdownMenuPrimitive.Item.displayName
 
+const DropdownMenuButton = React.forwardRef<
+  HTMLAnchorElement,
+  React.ComponentProps<"a"> & {
+    title: string
+    url: string
+  }
+>(({ title, url, className, onClick, ...props }, ref) => {
+
+  return (
+    <a
+      ref={ref}
+      className={cn(
+        "w-full flex justify-start",
+        className
+      )}
+      onClick={(e) => {
+        localStorage.setItem("selectedHeader", title)
+        onClick?.(e)
+      }}
+      href={url}
+      {...props}
+    />
+  )
+})
+DropdownMenuButton.displayName = "DropdownMenuButton"
+
 const DropdownMenuCheckboxItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.CheckboxItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.CheckboxItem>
@@ -187,6 +213,7 @@ export {
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuButton,
   DropdownMenuCheckboxItem,
   DropdownMenuRadioItem,
   DropdownMenuLabel,

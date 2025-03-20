@@ -2,33 +2,41 @@
 
 import * as React from "react"
 import {
-  BookOpen,
-  Bot,
   Command,
-  Frame,
-  LifeBuoy,
-  Map,
-  PieChart,
-  Send,
-  Settings2,
-  SquareTerminal,
+  ChevronsUpDown,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
 import { NavData } from "@/components/nav-data"
-import { NavSecondary } from "@/components/nav-secondary"
-import { NavUser } from "@/components/nav-user"
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuButton,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const data = {
+  navPage: [
+    {
+      title: "공간분석",
+      url: "/dashboard",
+      icon: "",
+    },
+    {
+      title: "자료분석",
+      url: "/chart",
+      icon: "",
+    },
+  ],
   user: {
     name: "developer",
     email: "sshkww@e2m3.com",
@@ -132,69 +140,101 @@ const data = {
       icon: "/lnb_menu5.png",
     },
   ],
-  navSecondary: [
-    {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function DashboardSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
   return (
     <Sidebar variant="inset" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton  size="lg" asChild>
-              <a href="#">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                  <Command className="size-4" />
-                </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">산단 HAPS</span>
-                  <span className="truncate text-xs">(주) 이투엠쓰리</span>
-                </div>
-              </a>
-            </SidebarMenuButton>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Command className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">산단 HAPS</span>
+                    <span className="truncate text-xs">(주) 이투엠쓰리</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[200px]"
+                side="bottom"
+                align="center"
+                sideOffset={4}
+              >
+                {data.navPage.map((item, index) => (
+                  <DropdownMenuItem key={index}>
+                    <DropdownMenuButton
+                      title={item.title}
+                      url={item.url}
+                    >{item.title}
+                    </DropdownMenuButton>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
-        <NavMain title={'공간분석'} items={data.navMain} />
-        <NavData title={'자료분석'} items={data.navData} />
-        {/*
-        <NavProjects projects={data.projects} />
-        */}
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+          <NavMain title={'공간분석'} items={data.navMain} />
       </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
+    </Sidebar>
+  )
+}
+export function ChartSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+
+  return (
+    <Sidebar variant="inset" {...props}>
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton size="lg">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Command className="size-4" />
+                  </div>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">산단 HAPS</span>
+                    <span className="truncate text-xs">(주) 이투엠쓰리</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[200px]"
+                side="bottom"
+                align="center"
+                sideOffset={4}
+              >
+                {data.navPage.map((item, index) => (
+                  <DropdownMenuItem key={index}>
+                    <DropdownMenuButton
+                      title={item.title}
+                      url={item.url}
+                    >{item.title}
+                    </DropdownMenuButton>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+          <NavData title={'자료분석'} items={data.navData} />
+      </SidebarContent>
 
     </Sidebar>
   )
